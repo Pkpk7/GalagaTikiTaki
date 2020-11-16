@@ -7,32 +7,31 @@ int main(int argc, char** argv) {
     sf::RenderWindow renderWindow(sf::VideoMode(width, height), "SFML Demo");
     sf::Event event;
     // A Clock starts counting as soon as it's created
-    sf::Clock clock;
-    sf::Sprite sprite;
-    sf::Sprite backgroundSprite;
+    sf::Sprite enemies[30];
     sf::Texture texture3;
     sf::IntRect rectSourceSprite(160, 151, 20, 15);
-    sf::Sprite sprite2(texture3, rectSourceSprite);
-    sf::Sprite sprite3(texture3, rectSourceSprite);
-    sf::Sprite sprite4(texture3, rectSourceSprite);
-    sf::Sprite sprite5(texture3, rectSourceSprite);
-    sf::Sprite sprite6(texture3, rectSourceSprite);
-    sf::Sprite sprite7(texture3, rectSourceSprite);
-    sf::Sprite sprite8(texture3, rectSourceSprite);
-    sf::Sprite sprite9(texture3, rectSourceSprite);
-    sf::Sprite sprite10(texture3, rectSourceSprite);
 
 
     // Load first enemies
-
-    for (int i = 0; i < 10; i++) {
-        texture3.loadFromFile("sprites.jpg");
-        sprite2.setTexture(texture3);
-        sprite2.setScale(2, 2);
-        sprite2.setPosition(40*(i + 1),40);
+    int xChange = 0;
+    int yChange = 1;
+    texture3.loadFromFile("sprites.jpg");
+    for (int i = 0; i < 30; i++) {
+        enemies[i].setTextureRect(rectSourceSprite);
+        enemies[i].setTexture(texture3);
+        if(xChange%10 == 0) {
+                yChange++;
+                xChange = 0;
+        }
+        enemies[i].setPosition(sf::Vector2f(50.f*(xChange+1), 40.f*yChange));
+        xChange++;
+        enemies[i].setScale(2, 2);
     }
-        
 
+
+    sf::Clock clock;
+    sf::Sprite sprite;
+    sf::Sprite backgroundSprite;
 
     // Load texture
     sf::Texture texture;
@@ -52,12 +51,13 @@ int main(int argc, char** argv) {
     sprite.setTexture(texture);
     sprite.setOrigin(sf::Vector2f(0.f, -215.f));
     sprite.setScale(2, 2);
-    int movement = 0; 
+    int movement = 0;
 
     backgroundSprite.setTexture(texture2);
     backgroundSprite.setOrigin(0, 480);
     int bacgkroundMovement = 1;
 
+    int enemiesAnimationWait = 1;
     while (renderWindow.isOpen()) {
         // Check for all the events that occured since the last frame.
         while (renderWindow.pollEvent(event)) {
@@ -65,14 +65,19 @@ int main(int argc, char** argv) {
                 renderWindow.close();
 
 
-            if (clock.getElapsedTime().asMicroseconds() > 1.0f) {
+
+        }
+        enemiesAnimationWait++;
+
+         if (clock.getElapsedTime().asMicroseconds() > 1.0f && enemiesAnimationWait > 300) {
                 if (rectSourceSprite.left == 184)
                     rectSourceSprite.left = 160;
                 else
                     rectSourceSprite.left += 24;
-                sprite2.setTextureRect(rectSourceSprite);
+                for(int i =0; i<30; i++)
+                    enemies[i].setTextureRect(rectSourceSprite);
+                enemiesAnimationWait = 1;
             }
-        }
 
 
         //Handle events here
@@ -119,7 +124,8 @@ int main(int argc, char** argv) {
 
         renderWindow.draw(backgroundSprite);
         renderWindow.draw(sprite);
-        renderWindow.draw(sprite2);
+        for(int i=0; i<30; i++)
+            renderWindow.draw(enemies[i]);
 
         renderWindow.display();
     }
