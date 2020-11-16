@@ -13,17 +13,25 @@ int main(int argc, char** argv) {
     sf::Texture texture3;
     sf::IntRect rectSourceSprite(160, 151, 20, 15);
     sf::Sprite sprite2(texture3, rectSourceSprite);
-
+    sf::Sprite sprite3(texture3, rectSourceSprite);
+    sf::Sprite sprite4(texture3, rectSourceSprite);
+    sf::Sprite sprite5(texture3, rectSourceSprite);
+    sf::Sprite sprite6(texture3, rectSourceSprite);
+    sf::Sprite sprite7(texture3, rectSourceSprite);
+    sf::Sprite sprite8(texture3, rectSourceSprite);
+    sf::Sprite sprite9(texture3, rectSourceSprite);
+    sf::Sprite sprite10(texture3, rectSourceSprite);
 
 
     // Load first enemies
 
-    texture3.loadFromFile("sprites.jpg");
-    sprite2.setTexture(texture3);
-    sprite2.setScale(2, 2);
-    sprite2.setPosition(40, 40);
+    for (int i = 0; i < 10; i++) {
+        texture3.loadFromFile("sprites.jpg");
+        sprite2.setTexture(texture3);
+        sprite2.setScale(2, 2);
+        sprite2.setPosition(40*(i + 1),40);
+    }
         
-    // Image starts pointed left, so rotate it 90 degrees clockwise
 
 
     // Load texture
@@ -116,3 +124,4 @@ int main(int argc, char** argv) {
         renderWindow.display();
     }
 }
+
