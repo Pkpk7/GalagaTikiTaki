@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <vector>
+
+using namespace sf;
 
 int getPt(int n1, int n2, float perc)
 {
@@ -47,6 +50,44 @@ int* getBezierCurveValue(int x1, int x2, int x3, int x4, int y1, int y2, int y3,
     return point;
 }
 
+class Bullet {
+public:
+    Sprite shape;
+
+    Bullet(Texture* texture, Vector2f pos)
+    {
+        this->shape.setTexture(*texture);
+        this->shape.setScale(2, 2);
+        this->shape.setOrigin(-7, -215);
+        this->shape.setPosition(pos);
+        //this->bullet.setPosition(pos);
+    }
+
+    ~Bullet() {}
+};
+
+class Player {
+public:
+    Sprite shape;
+    Texture* texture;
+    int HP;
+    int HPMax;
+    
+    std::vector<Bullet> bullets;
+
+    Player(Texture* texture) {
+        this->HPMax = 3;
+        this->HP = this->HPMax;
+        this->texture = texture;
+        this->shape.setTexture(*texture);
+        this->shape.setScale(2,2);
+        this->shape.setOrigin(0.f, -225.f);
+    }
+
+    ~Player() {}
+};
+
+
 int main(int argc, char** argv) {
     int width = 640;
     int height = 480;
@@ -54,7 +95,6 @@ int main(int argc, char** argv) {
     sf::Event event;
     // A Clock starts counting as soon as it's created
     sf::Sprite enemies[30];
-    sf::Sprite bullet;
     sf::Texture texture3;
     sf::IntRect rectSourceSprite(160, 151, 20, 15);
     sf::Texture texture4;
@@ -62,8 +102,20 @@ int main(int argc, char** argv) {
     sf::Image image;
     image.loadFromFile("sprites.jpg");
     image.createMaskFromColor(sf::Color::Black);
-    
 
+
+
+    /*init textures*/
+    Texture playerTex;
+    playerTex.loadFromFile("shape.png");
+
+    Texture bulletTex;
+    bulletTex.loadFromFile("bullets.png");
+
+    //Player init
+
+    int shootTimer = 20;
+    Player player(&playerTex);
 
     /* initialize random seed: */
     srand(time(NULL));
@@ -112,12 +164,8 @@ int main(int argc, char** argv) {
         std::cout << "Error while loading the sprite!";
     }
 
-    // Load sprites
-    sprite.setTexture(texture);
-    sprite.setOrigin(sf::Vector2f(0.f, -215.f));
-    sprite.setScale(2, 2);
+   
     int movement = 0;
-
     backgroundSprite.setTexture(texture2);
     backgroundSprite.setOrigin(0, 480);
     int bacgkroundMovement = 1;
@@ -133,14 +181,42 @@ int main(int argc, char** argv) {
     int bezierIterator = 0;
 
     while (renderWindow.isOpen()) {
-        // Check for all the events that occured since the last frame.
-        while (renderWindow.pollEvent(event)) {
-            if (event.type == sf::Event::EventType::Closed)
-                renderWindow.close();
-
-
-
+        // player
+        if (Keyboard::isKeyPressed(Keyboard::Left)) {
+            player.shape.move(-1.f, 0.f);
         }
+        if (Keyboard::isKeyPressed(Keyboard::Right)) {
+                player.shape.move(1.f, 0.f);
+        }
+
+        // collision with window
+        if (player.shape.getPosition().x <= 0) // left
+            player.shape.setPosition(0.f, player.shape.getPosition().y);
+        else if (player.shape.getPosition().x >= renderWindow.getSize().x) // right
+            player.shape.setPosition(renderWindow.getSize().x - player.shape.getGlobalBounds().width, player.shape.getPosition().y);
+
+
+
+        // update
+        if (shootTimer < 50) {
+            shootTimer++;
+        }
+
+        if (Keyboard::isKeyPressed(Keyboard::Space) && shootTimer >=50) {
+            player.bullets.push_back(Bullet(&bulletTex,player.shape.getPosition()));
+            shootTimer = 0;
+        }
+
+        // bullets
+        for (size_t i = 0; i < player.bullets.size(); i++) {
+
+            player.bullets[i].shape.move(0.f, -1.f);
+
+            if (player.bullets[i].shape.getPosition().y > renderWindow.getSize().y) {
+                player.bullets.erase(player.bullets.begin() + i);
+            }
+        }     
+
         enemiesAnimationWait++;
 
         if (clock.getElapsedTime().asMicroseconds() > 1.0f && enemiesAnimationWait > 230) {
@@ -189,84 +265,8 @@ int main(int argc, char** argv) {
             }
         }
 
-        /* initialize bullet*/
-
-        bool isFire = false;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
-            isFire = true;
-            texture4.loadFromImage(image);
-            bullet.setTextureRect(rectSourceSprite2);
-            bullet.setTexture(texture4);
-            bullet.setOrigin(sf::Vector2f(-6.f, -205.f));
-            bullet.setScale(2, 2);
-            renderWindow.draw(bullet);
-            renderWindow.display();
-        }
-
-        //Handle events here
-        switch (event.type) {
-        case sf::Event::KeyPressed:
-            if (event.key.code == sf::Keyboard::Left && sprite.getPosition().x > 0) {
-                movement = -1;
-            }
-            else if (event.key.code == sf::Keyboard::Right && sprite.getPosition().x < 600) {
-                movement = 1;
-            }
-            else if (event.key.code == sf::Keyboard::Right && sprite.getPosition().x >= 600) {
-                movement = 0;
-            }
-            else if (event.key.code == sf::Keyboard::Left && sprite.getPosition().x <= 0) {
-                movement = 0;
-            }
-            break;
-        case sf::Event::KeyReleased:
-            if (event.key.code == sf::Keyboard::Left) {
-                movement = 0;
-            }
-            else if (event.key.code == sf::Keyboard::Right) {
-                movement = 0;
-            }
-            break;
-        default:
-            movement = 0;
-            break;
-        }
         backgroundSprite.move(0, bacgkroundMovement);
         sprite.move(movement, 0);
-
-        if (backgroundSprite.getPosition().y == 480) {
-            backgroundSprite.move(0, -480);
-        }
-
-        switch (event.type) {
-        case sf::Event::KeyPressed:
-            if (event.key.code == sf::Keyboard::Left && bullet.getPosition().x > 0) {
-                movement = -1;
-            }
-            else if (event.key.code == sf::Keyboard::Right && bullet.getPosition().x < 600) {
-                movement = 1;
-            }
-            else if (event.key.code == sf::Keyboard::Right && bullet.getPosition().x >= 600) {
-                movement = 0;
-            }
-            else if (event.key.code == sf::Keyboard::Left && bullet.getPosition().x <= 0) {
-                movement = 0;
-            }       
-            break;
-        case sf::Event::KeyReleased:
-            if (event.key.code == sf::Keyboard::Left) {
-                movement = 0;
-            }
-            else if (event.key.code == sf::Keyboard::Right) {
-                movement = 0;
-            }
-            break;
-        default:
-            movement = 0;
-            break;
-        }
-        backgroundSprite.move(0, bacgkroundMovement);
-        bullet.move(movement, 0);
 
         if (backgroundSprite.getPosition().y == 480) {
             backgroundSprite.move(0, -480);
@@ -279,11 +279,20 @@ int main(int argc, char** argv) {
 
         renderWindow.clear();
 
+
         renderWindow.draw(backgroundSprite);
-        renderWindow.draw(sprite);
-        for (int i = 0; i < 30; i++)
+        //renderWindow.draw(sprite);
+        for (int i = 0; i < 30; i++) {
             renderWindow.draw(enemies[i]);
+        }
+
+        renderWindow.draw(player.shape);
        
+        for (size_t i = 0; i < player.bullets.size(); i++) {
+            renderWindow.draw(player.bullets[i].shape);
+        }
+
+
         renderWindow.display();
     }
 }
