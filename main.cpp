@@ -62,16 +62,7 @@ int main(int argc, char** argv) {
     sf::Image image;
     image.loadFromFile("sprites.jpg");
     image.createMaskFromColor(sf::Color::Black);
-
-
-    /* initialize bullet*/
-
-    bool isFire = false;
-    texture4.loadFromImage(image);
-    bullet.setTextureRect(rectSourceSprite2);
-    bullet.setTexture(texture4);
-    bullet.setOrigin(sf::Vector2f(-6.f, -205.f));
-    bullet.setScale(2, 2);
+    
 
 
     /* initialize random seed: */
@@ -198,6 +189,20 @@ int main(int argc, char** argv) {
             }
         }
 
+        /* initialize bullet*/
+
+        bool isFire = false;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) {
+            isFire = true;
+            texture4.loadFromImage(image);
+            bullet.setTextureRect(rectSourceSprite2);
+            bullet.setTexture(texture4);
+            bullet.setOrigin(sf::Vector2f(-6.f, -205.f));
+            bullet.setScale(2, 2);
+            renderWindow.draw(bullet);
+            renderWindow.display();
+        }
+
         //Handle events here
         switch (event.type) {
         case sf::Event::KeyPressed:
@@ -246,10 +251,7 @@ int main(int argc, char** argv) {
             }
             else if (event.key.code == sf::Keyboard::Left && bullet.getPosition().x <= 0) {
                 movement = 0;
-            }
-            else if (event.key.code == sf::Keyboard::Space) {
-                bool isFire = true;
-            }
+            }       
             break;
         case sf::Event::KeyReleased:
             if (event.key.code == sf::Keyboard::Left) {
@@ -281,8 +283,7 @@ int main(int argc, char** argv) {
         renderWindow.draw(sprite);
         for (int i = 0; i < 30; i++)
             renderWindow.draw(enemies[i]);
-        renderWindow.draw(bullet);
-
+       
         renderWindow.display();
     }
 }
