@@ -50,6 +50,8 @@ int* getBezierCurveValue(int x1, int x2, int x3, int x4, int y1, int y2, int y3,
     return point;
 }
 
+
+
 class Bullet {
 public:
     Sprite shape;
@@ -72,7 +74,7 @@ public:
     Texture* texture;
     int HP;
     int HPMax;
-    
+
     std::vector<Bullet> bullets;
 
     Player(Texture* texture) {
@@ -89,6 +91,11 @@ public:
 
 
 int main(int argc, char** argv) {
+    bool canEnemyMove[30];
+    std::fill_n(canEnemyMove, 30, true);
+    int goDownIterator = 0;
+    bool aliensAreGoingDown = true;
+
     int width = 640;
     int height = 480;
     sf::RenderWindow renderWindow(sf::VideoMode(width, height), "SFML Demo");
@@ -130,7 +137,7 @@ int main(int argc, char** argv) {
 
     // Load first enemies
     int xChange = 0;
-    int yChange = 1;
+    int yChange = -4;
     texture3.loadFromImage(image);
     for (int i = 0; i < 30; i++) {
         enemies[i].setTextureRect(rectSourceSprite);
@@ -164,7 +171,7 @@ int main(int argc, char** argv) {
         std::cout << "Error while loading the sprite!";
     }
 
-   
+
     int movement = 0;
     backgroundSprite.setTexture(texture2);
     backgroundSprite.setOrigin(0, 480);
@@ -177,7 +184,7 @@ int main(int argc, char** argv) {
 
 
     int whichAlienDoesBezier = rand() % 30;
-    int* point = getBezierCurveValue(enemies[whichAlienDoesBezier].getPosition().x, xBezier, xBezier2, enemies[whichAlienDoesBezier].getPosition().x, enemies[whichAlienDoesBezier].getPosition().y, yBezier, yBezier2, enemies[whichAlienDoesBezier].getPosition().y);
+    int* point = getBezierCurveValue(enemies[whichAlienDoesBezier].getPosition().x, xBezier, xBezier2, enemies[whichAlienDoesBezier].getPosition().x, enemies[whichAlienDoesBezier].getPosition().y+200, yBezier, yBezier2, enemies[whichAlienDoesBezier].getPosition().y+200);
     int bezierIterator = 0;
 
     while (renderWindow.isOpen()) {
@@ -192,17 +199,17 @@ int main(int argc, char** argv) {
         // collision with window
         if (player.shape.getPosition().x <= 0) // left
             player.shape.setPosition(0.f, player.shape.getPosition().y);
-        else if (player.shape.getPosition().x >= renderWindow.getSize().x) // right
+        else if (player.shape.getPosition().x >= renderWindow.getSize().x - player.shape.getGlobalBounds().width) // right
             player.shape.setPosition(renderWindow.getSize().x - player.shape.getGlobalBounds().width, player.shape.getPosition().y);
 
 
 
         // update
-        if (shootTimer < 50) {
+        if (shootTimer < 500) {
             shootTimer++;
         }
 
-        if (Keyboard::isKeyPressed(Keyboard::Space) && shootTimer >=50) {
+        if (Keyboard::isKeyPressed(Keyboard::Space) && shootTimer >=200) {
             player.bullets.push_back(Bullet(&bulletTex,player.shape.getPosition()));
             shootTimer = 0;
         }
@@ -212,10 +219,22 @@ int main(int argc, char** argv) {
 
             player.bullets[i].shape.move(0.f, -1.f);
 
+            for (int j = 0; j < 30; j++){
+                if(player.bullets[i].shape.getGlobalBounds().intersects( enemies[j].getGlobalBounds()) && canEnemyMove[j]) {
+                        player.bullets.erase(player.bullets.begin() + i);
+                        canEnemyMove[j] = false;
+                        if ((j + 1) % 10 == 0) enemies[j].setPosition(enemies[j - 1].getPosition().x + 53.f, enemies[j-1].getPosition().y);
+                        else enemies[j].setPosition(enemies[j + 1].getPosition().x - 53.f, enemies[j+1].getPosition().y);
+
+                }
+            }
+
+
+
             if (player.bullets[i].shape.getPosition().y > renderWindow.getSize().y) {
                 player.bullets.erase(player.bullets.begin() + i);
             }
-        }     
+        }
 
         enemiesAnimationWait++;
 
@@ -242,16 +261,18 @@ int main(int argc, char** argv) {
                 enemies[i].move(enemiesMovementSpeed, 0);
         }
 
-        if (enemiesMovementCount % 20 == 0) {
+        if (enemiesMovementCount % 20 == 0 && !aliensAreGoingDown) {
 
-            enemies[whichAlienDoesBezier].setPosition(*(point + bezierIterator), *(point + 101 + bezierIterator));
+            if(canEnemyMove[whichAlienDoesBezier])
+                enemies[whichAlienDoesBezier].setPosition(*(point + bezierIterator), *(point + 101 + bezierIterator));
             //std::cout << *(point+12+100) << std::endl;
             //std::cout << "(x - " << enemies[whichAlienDoesBezier].getPosition().x << "  |  y - " << enemies[whichAlienDoesBezier].getPosition().y  << ")   +  " << bezierIterator << std::endl;
             bezierIterator += 1;
             if (bezierIterator == 101) {
-                if ((whichAlienDoesBezier + 1) % 10 == 0) enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier - 1].getPosition().x + 53.f, enemies[whichAlienDoesBezier].getPosition().y);
-                else enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier + 1].getPosition().x - 53.f, enemies[whichAlienDoesBezier].getPosition().y);
-
+                if(canEnemyMove[whichAlienDoesBezier]){
+                    if ((whichAlienDoesBezier + 1) % 10 == 0) enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier - 1].getPosition().x + 53.f, enemies[whichAlienDoesBezier].getPosition().y);
+                    else enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier + 1].getPosition().x - 53.f, enemies[whichAlienDoesBezier].getPosition().y);
+                }
                 whichAlienDoesBezier = rand() % 30;
 
                 bezierIterator = 0;
@@ -272,6 +293,39 @@ int main(int argc, char** argv) {
             backgroundSprite.move(0, -480);
         }
 
+
+        //Check if all enemies are killed - if yes initalize them again and make the highscore bigger
+        bool allEnemiesAreDead = true;
+        for(int i = 0; i<30; i++){
+            if(canEnemyMove[i] == true) allEnemiesAreDead = false;
+        }
+
+        if(allEnemiesAreDead){
+            xChange = 0;
+            yChange = -4;
+            std::fill_n(canEnemyMove, 30, true);
+            bezierIterator = 100;
+            for (int i = 0; i < 30; i++) {
+                if (xChange % 10 == 0) {
+                    yChange++;
+                    xChange = 0;
+                }
+                enemies[i].setPosition(sf::Vector2f(53.f * (xChange + 1), 40.f * yChange));
+                xChange++;
+            }
+            goDownIterator = 0;
+            aliensAreGoingDown = true;
+        }
+
+
+        if(goDownIterator < 800){
+            for(int j = 0; j<30; j++){
+                enemies[j].move(sf::Vector2f(0.f, 0.25f));
+            }
+            goDownIterator++;
+            if(goDownIterator == 799) aliensAreGoingDown = false;
+        }
+
         // A microsecond is 1/1,000,000th of a second, 1000 microseconds == 1 millisecond
         // std::cout << "Elapsed time since previous frame(microseconds): " << clock.getElapsedTime().asMicroseconds() << std::endl;
         // Start the countdown over.  Think of laps on a stop watch.
@@ -283,11 +337,12 @@ int main(int argc, char** argv) {
         renderWindow.draw(backgroundSprite);
         //renderWindow.draw(sprite);
         for (int i = 0; i < 30; i++) {
-            renderWindow.draw(enemies[i]);
+            if(canEnemyMove[i])
+                renderWindow.draw(enemies[i]);
         }
 
         renderWindow.draw(player.shape);
-       
+
         for (size_t i = 0; i < player.bullets.size(); i++) {
             renderWindow.draw(player.bullets[i].shape);
         }
