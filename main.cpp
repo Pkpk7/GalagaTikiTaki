@@ -6,6 +6,8 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include <fstream>
+
 
 using namespace sf;
 
@@ -53,13 +55,13 @@ int* getBezierCurveValue(int x1, int x2, int x3, int x4, int y1, int y2, int y3,
 }
 
 
-class Explosion{
+class Explosion {
 public:
     Sprite shape;
     int timer = 0;
     sf::IntRect rectSourceSprite;
 
-    Explosion(Texture* texture, Vector2f pos, int top, int left, int height, int width){
+    Explosion(Texture* texture, Vector2f pos, int top, int left, int height, int width) {
         this->rectSourceSprite.left = left;
         this->rectSourceSprite.top = top;
         this->rectSourceSprite.height = height;
@@ -102,7 +104,7 @@ public:
         this->HP = this->HPMax;
         this->texture = texture;
         this->shape.setTexture(*texture);
-        this->shape.setScale(2,2);
+        this->shape.setScale(2, 2);
         this->shape.setPosition(0.f, 440.f);
     }
 
@@ -116,6 +118,7 @@ int main(int argc, char** argv) {
     int counterFromDeathToGameOver = 1000;
     int invicible = 0;
 
+    int highscore;
     int score = 0;
     int level = 1;
 
@@ -139,14 +142,28 @@ int main(int argc, char** argv) {
     music.openFromFile("Theme Song 8-bit V1 _opening.wav");
     music.setLoop(true);
 
+
+    std::ifstream readFile;
+    readFile.open("highscore.txt");
+
+    if (readFile.is_open())
+    {
+        while (!readFile.eof())
+        {
+            readFile >> highscore;
+        }
+    }
+    readFile.close();
+
+
+
     sf::Font font;
     if (!font.loadFromFile("8-bit Arcade In.ttf"))
     {
-       std::cout << "Couldnt load the font";
+        std::cout << "Couldnt load the font";
     }
     sf::Text text;
     text.setFont(font);
-    text.setString(" Score "+std::to_string(score)+"\n LVL "+std::to_string(level));
     text.setCharacterSize(24);
 
 
@@ -197,9 +214,9 @@ int main(int argc, char** argv) {
     //Lives init
     Sprite lives[3];
 
-    for(int i =0; i<3; i++){
+    for (int i = 0; i < 3; i++) {
         lives[i].setTexture(playerTex);
-        lives[i].setPosition(sf::Vector2f(5.f, 60+20.f * i));
+        lives[i].setPosition(sf::Vector2f(5.f, 60 + 20.f * i));
     }
 
     //Player init
@@ -207,7 +224,7 @@ int main(int argc, char** argv) {
     int shootTimer = 20;
     Player player(&playerTex);
 
-     std::vector<Explosion> explosions;
+    std::vector<Explosion> explosions;
 
     /* initialize random seed: */
     srand(time(NULL));
@@ -278,7 +295,7 @@ int main(int argc, char** argv) {
 
 
     int whichAlienDoesBezier = rand() % 30;
-    int* point = getBezierCurveValue(enemies[whichAlienDoesBezier].getPosition().x, xBezier, xBezier2, enemies[whichAlienDoesBezier].getPosition().x, enemies[whichAlienDoesBezier].getPosition().y+200, yBezier, yBezier2, enemies[whichAlienDoesBezier].getPosition().y+200);
+    int* point = getBezierCurveValue(enemies[whichAlienDoesBezier].getPosition().x, xBezier, xBezier2, enemies[whichAlienDoesBezier].getPosition().x, enemies[whichAlienDoesBezier].getPosition().y + 200, yBezier, yBezier2, enemies[whichAlienDoesBezier].getPosition().y + 200);
     int bezierIterator = 0;
 
     sound.setBuffer(bufferAliensAreFalling);
@@ -291,7 +308,7 @@ int main(int argc, char** argv) {
             player.shape.move(-1.f, 0.f);
         }
         if (Keyboard::isKeyPressed(Keyboard::Right) && isPlayerAlive) {
-                player.shape.move(1.f, 0.f);
+            player.shape.move(1.f, 0.f);
         }
 
         // collision with window
@@ -307,16 +324,16 @@ int main(int argc, char** argv) {
             shootTimer++;
         }
 
-        if (Keyboard::isKeyPressed(Keyboard::Space) && shootTimer >=200 && !aliensAreGoingDown && isPlayerAlive) {
-            player.bullets.push_back(Bullet(&bulletTex,player.shape.getPosition(),-7, 10));
+        if (Keyboard::isKeyPressed(Keyboard::Space) && shootTimer >= 200 && !aliensAreGoingDown && isPlayerAlive) {
+            player.bullets.push_back(Bullet(&bulletTex, player.shape.getPosition(), -7, 10));
             shootTimer = 0;
             sound.setBuffer(bufferShooting);
             sound.play();
         }
 
         //CheckCollisionOfAliens
-        for(int i = 0; i<30; i++){
-            if(player.shape.getGlobalBounds().intersects( enemies[i].getGlobalBounds()) && canEnemyMove[i] && invicible == 0 && isPlayerAlive) {
+        for (int i = 0; i < 30; i++) {
+            if (player.shape.getGlobalBounds().intersects(enemies[i].getGlobalBounds()) && canEnemyMove[i] && invicible == 0 && isPlayerAlive) {
                 explosions.push_back(Explosion(&explosionTexture, enemies[i].getPosition(), 186, 201, 40, 25));
                 canEnemyMove[i] = false;
                 player.HP--;
@@ -331,10 +348,10 @@ int main(int argc, char** argv) {
 
         //Create enemy bullets
         enemyBulletsIterator++;
-        if(enemyBulletsIterator == 500)
+        if (enemyBulletsIterator == 500)
         {
-            for(int i =0; i<30; i++){
-                if (shoot>shouldShoot && canEnemyMove[i]) {
+            for (int i = 0; i < 30; i++) {
+                if (shoot > shouldShoot && canEnemyMove[i]) {
                     enemyBullets.push_back(Bullet(&enemyBullet, enemies[i].getPosition(), -5, 5));
                     std::cout << "I shot" << std::endl;
                 }
@@ -348,13 +365,13 @@ int main(int argc, char** argv) {
 
             enemyBullets[i].shape.move(0.f, 0.2f);
 
-            if(enemyBullets[i].shape.getGlobalBounds().intersects( player.shape.getGlobalBounds()) && invicible == 0 && isPlayerAlive) {
-                        enemyBullets.erase(enemyBullets.begin() + i);
-                        player.HP--;
-                        invicible = 1000;
-                        sound.setBuffer(bufferPlayerDmg);
-                        sound.play();
-                }
+            if (enemyBullets[i].shape.getGlobalBounds().intersects(player.shape.getGlobalBounds()) && invicible == 0 && isPlayerAlive) {
+                enemyBullets.erase(enemyBullets.begin() + i);
+                player.HP--;
+                invicible = 1000;
+                sound.setBuffer(bufferPlayerDmg);
+                sound.play();
+            }
 
 
             //std::cout << enemyBullets[i].shape.getPosition().y << std::endl;
@@ -370,17 +387,17 @@ int main(int argc, char** argv) {
 
             player.bullets[i].shape.move(0.f, -1.f);
 
-            for (int j = 0; j < 30; j++){
-                if(player.bullets[i].shape.getGlobalBounds().intersects( enemies[j].getGlobalBounds()) && canEnemyMove[j]) {
+            for (int j = 0; j < 30; j++) {
+                if (player.bullets[i].shape.getGlobalBounds().intersects(enemies[j].getGlobalBounds()) && canEnemyMove[j]) {
 
-                        sound.setBuffer(bufferAlienExplosion);
-                        sound.play();
-                        explosions.push_back(Explosion(&explosionTexture, enemies[j].getPosition(), 186, 201, 40, 25));
-                        player.bullets.erase(player.bullets.begin() + i);
-                        canEnemyMove[j] = false;
-                        if ((j + 1) % 10 == 0) enemies[j].setPosition(enemies[j - 1].getPosition().x + 53.f, enemies[j-1].getPosition().y);
-                        else enemies[j].setPosition(enemies[j + 1].getPosition().x - 53.f, enemies[j+1].getPosition().y);
-                        score += 10;
+                    sound.setBuffer(bufferAlienExplosion);
+                    sound.play();
+                    explosions.push_back(Explosion(&explosionTexture, enemies[j].getPosition(), 186, 201, 40, 25));
+                    player.bullets.erase(player.bullets.begin() + i);
+                    canEnemyMove[j] = false;
+                    if ((j + 1) % 10 == 0) enemies[j].setPosition(enemies[j - 1].getPosition().x + 53.f, enemies[j - 1].getPosition().y);
+                    else enemies[j].setPosition(enemies[j + 1].getPosition().x - 53.f, enemies[j + 1].getPosition().y);
+                    score += 10;
 
 
                 }
@@ -395,22 +412,26 @@ int main(int argc, char** argv) {
 
 
         //animate explosions
-        for(size_t i = 0; i < explosions.size(); i++) {
+        for (size_t i = 0; i < explosions.size(); i++) {
             explosions[i].timer++;
-            if(explosions[i].timer == 100){
+            if (explosions[i].timer == 100) {
                 explosions[i].rectSourceSprite.left += 25;
                 explosions[i].shape.setTextureRect(explosions[i].rectSourceSprite);
-            }else if(explosions[i].timer == 200){
+            }
+            else if (explosions[i].timer == 200) {
                 explosions[i].rectSourceSprite.left += 25;
                 explosions[i].shape.setTextureRect(explosions[i].rectSourceSprite);
-            }else if(explosions[i].timer == 300){
+            }
+            else if (explosions[i].timer == 300) {
                 explosions[i].rectSourceSprite.left += 25;
                 explosions[i].rectSourceSprite.width = 40;
                 explosions[i].shape.setTextureRect(explosions[i].rectSourceSprite);
-            }else if(explosions[i].timer == 400){
+            }
+            else if (explosions[i].timer == 400) {
                 explosions[i].rectSourceSprite.left += 40;
                 explosions[i].shape.setTextureRect(explosions[i].rectSourceSprite);
-            }else if(explosions[i].timer == 500){
+            }
+            else if (explosions[i].timer == 500) {
                 explosions.erase(explosions.begin() + i);
             }
         }
@@ -443,13 +464,13 @@ int main(int argc, char** argv) {
 
         if (enemiesMovementCount % 20 == 0 && !aliensAreGoingDown) {
 
-            if(canEnemyMove[whichAlienDoesBezier])
+            if (canEnemyMove[whichAlienDoesBezier])
                 enemies[whichAlienDoesBezier].setPosition(*(point + bezierIterator), *(point + 101 + bezierIterator));
             //std::cout << *(point+12+100) << std::endl;
             //std::cout << "(x - " << enemies[whichAlienDoesBezier].getPosition().x << "  |  y - " << enemies[whichAlienDoesBezier].getPosition().y  << ")   +  " << bezierIterator << std::endl;
             bezierIterator += 1;
             if (bezierIterator == 101) {
-                if(canEnemyMove[whichAlienDoesBezier]){
+                if (canEnemyMove[whichAlienDoesBezier]) {
                     if ((whichAlienDoesBezier + 1) % 10 == 0) enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier - 1].getPosition().x + 53.f, enemies[whichAlienDoesBezier].getPosition().y);
                     else enemies[whichAlienDoesBezier].setPosition(enemies[whichAlienDoesBezier + 1].getPosition().x - 53.f, enemies[whichAlienDoesBezier].getPosition().y);
                 }
@@ -476,15 +497,15 @@ int main(int argc, char** argv) {
 
         //Check if all enemies are killed - if yes initalize them again and make the highscore bigger
         bool allEnemiesAreDead = true;
-        for(int i = 0; i<30; i++){
-            if(canEnemyMove[i] == true) allEnemiesAreDead = false;
+        for (int i = 0; i < 30; i++) {
+            if (canEnemyMove[i] == true) allEnemiesAreDead = false;
         }
 
-        if(allEnemiesAreDead){
+        if (allEnemiesAreDead) {
             sound.setBuffer(bufferAliensAreFalling);
             sound.play();
             level++;
-            if(shouldShoot > 80) shouldShoot-=1;
+            if (shouldShoot > 80) shouldShoot -= 1;
             xChange = 0;
             yChange = -4;
             std::fill_n(canEnemyMove, 30, true);
@@ -502,15 +523,15 @@ int main(int argc, char** argv) {
         }
 
 
-        if(goDownIterator < 800){
-            for(int j = 0; j<30; j++){
+        if (goDownIterator < 800) {
+            for (int j = 0; j < 30; j++) {
                 enemies[j].move(sf::Vector2f(0.f, 0.25f));
             }
             goDownIterator++;
-            if(goDownIterator == 799) aliensAreGoingDown = false;
+            if (goDownIterator == 799) aliensAreGoingDown = false;
         }
 
-        text.setString(" Score "+std::to_string(score)+"\n LVL "+std::to_string(level));
+        text.setString(" HighScore " + std::to_string(highscore) + "\n Score " + std::to_string(score) + "\n LVL " + std::to_string(level));
 
         // A microsecond is 1/1,000,000th of a second, 1000 microseconds == 1 millisecond
         // std::cout << "Elapsed time since previous frame(microseconds): " << clock.getElapsedTime().asMicroseconds() << std::endl;
@@ -523,15 +544,15 @@ int main(int argc, char** argv) {
         renderWindow.draw(backgroundSprite);
         //renderWindow.draw(sprite);
         for (int i = 0; i < 30; i++) {
-            if(canEnemyMove[i])
+            if (canEnemyMove[i])
                 renderWindow.draw(enemies[i]);
         }
 
-        if(invicible%2 == 0)
+        if (invicible % 2 == 0)
             renderWindow.draw(player.shape);
 
 
-        if(invicible != 0) invicible--;
+        if (invicible != 0) invicible--;
 
         for (size_t i = 0; i < player.bullets.size(); i++) {
             renderWindow.draw(player.bullets[i].shape);
@@ -545,34 +566,50 @@ int main(int argc, char** argv) {
             renderWindow.draw(explosions[i].shape);
         }
 
-        for(int i =0; i<player.HP; i++){
+        for (int i = 0; i < player.HP; i++) {
             renderWindow.draw(lives[i]);
         }
 
-        if(player.HP == 0) {
-                invicible = 0;
-                isPlayerAlive = false;
-                player.shape.setTexture(playerDeathTexture);
-                counterFromDeathToGameOver--;
-                if(counterFromDeathToGameOver==800){
-                    sound.setBuffer(bufferPlayerExplosion);
-                    sound.play();
-                    player.shape.move(-16.f, -11.f);
-                    playerDeathRect.left += 40;
-                    player.shape.setTextureRect(playerDeathRect);
-                }else if(counterFromDeathToGameOver==600){
-                    playerDeathRect.left += 40;
-                    player.shape.setTextureRect(playerDeathRect);
-                }else if(counterFromDeathToGameOver==400){
-                    playerDeathRect.left += 40;
-                    player.shape.setTextureRect(playerDeathRect);
-                }else if(counterFromDeathToGameOver==0){
-                    renderWindow.close();
-                }
+        if (player.HP == 0) {
+            invicible = 0;
+            isPlayerAlive = false;
+            player.shape.setTexture(playerDeathTexture);
+            counterFromDeathToGameOver--;
+            if (counterFromDeathToGameOver == 800) {
+                sound.setBuffer(bufferPlayerExplosion);
+                sound.play();
+                player.shape.move(-16.f, -11.f);
+                playerDeathRect.left += 40;
+                player.shape.setTextureRect(playerDeathRect);
+            }
+            else if (counterFromDeathToGameOver == 600) {
+                playerDeathRect.left += 40;
+                player.shape.setTextureRect(playerDeathRect);
+            }
+            else if (counterFromDeathToGameOver == 400) {
+                playerDeathRect.left += 40;
+                player.shape.setTextureRect(playerDeathRect);
+            }
+            else if (counterFromDeathToGameOver == 0) {
+                renderWindow.close();
+            }
         }
 
         renderWindow.draw(text);
 
         renderWindow.display();
     }
+
+    std::ofstream writeFile;
+    writeFile.open("highscore.txt");
+
+    if (writeFile.is_open())
+    {
+        if (score > highscore)
+        {
+            highscore = score;
+        }
+        writeFile << highscore;
+    }
+    writeFile.close();
 }
